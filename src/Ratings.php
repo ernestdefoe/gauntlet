@@ -102,8 +102,8 @@ class Ratings
         $match->rating_delta1 = $delta;
         $match->rating_delta2 = -$delta;
 
-        $this->bump($a, $game, $delta, $actual === 1.0 ? 'wins' : ($actual === 0.0 ? 'losses' : 'draws'), 1);
-        $this->bump($b, $game, -$delta, $actual === 0.0 ? 'wins' : ($actual === 1.0 ? 'losses' : 'draws'), 1);
+        $this->bump($a, $game, $delta, $actual === 1.0 ? 'wins' : ($actual === 0.0 ? 'losses' : 'draws'), 1, trim($tournament->game));
+        $this->bump($b, $game, -$delta, $actual === 0.0 ? 'wins' : ($actual === 1.0 ? 'losses' : 'draws'), 1, trim($tournament->game));
     }
 
     /** Take back what a result gave. */
@@ -138,16 +138,16 @@ class Ratings
     }
 
     /** @param array{0: string, 1: int} $subject */
-    private function bump(array $subject, string $game, int $delta, string $column, int $count): void
+    private function bump(array $subject, string $game, int $delta, string $column, int $count, ?string $label = null): void
     {
         $key = ['subject_type' => $subject[0], 'subject_id' => $subject[1], 'game' => $game];
         $now = Carbon::now();
 
         if (! $this->db->table('gauntlet_ratings')->where($key)->exists()) {
-            $this->db->table('gauntlet_ratings')->insert($key + ['rating' => self::START, 'created_at' => $now, 'updated_at' => $now]);
+            $this->db->table('gauntlet_ratings')->insert($key + ['rating' => self::START, 'game_label' => (string) $label, 'created_at' => $now, 'updated_at' => $now]);
         }
 
-        $this->db->table('gauntlet_ratings')->where($key)->update([
+        $this->db->table('gauntlet_ratings')->where($key)->update(($label !== null ? ['game_label' => $label] : []) + [
             'rating' => $this->db->raw($this->db->getQueryGrammar()->wrap('rating').' + '.(int) $delta),
             'played' => $this->db->raw($this->db->getQueryGrammar()->wrap('played').' + '.$count),
             $column => $this->db->raw($this->db->getQueryGrammar()->wrap($column).' + '.$count),

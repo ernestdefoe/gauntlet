@@ -28,9 +28,9 @@ use Flarum\Extend;
 return [
     (new Extend\Frontend('forum'))
         ->js(__DIR__.'/js/dist/forum.js')
-        // The pages, the bracket and the editor are their own chunks.
+        // The pages, the bracket, the editor and their styles are their own
+        // chunks: nothing of Gauntlet's is in forum.css.
         ->jsDirectory(__DIR__.'/js/dist/forum')
-        ->css(__DIR__.'/less/forum.less')
         // Static paths before {id}: FastRoute refuses a static route that an
         // earlier variable one already matches.
         ->route('/tournaments', 'gauntlet.index')
@@ -106,6 +106,8 @@ return [
                 ->get(fn ($forum, Context $context) => $context->getActor()->hasPermission('gauntlet.view')),
             Schema\Boolean::make('canCreateTournaments')
                 ->get(fn ($forum, Context $context) => Gate::canCreate($context->getActor())),
+            Schema\Boolean::make('canRewardTournaments')
+                ->get(fn ($forum, Context $context) => Gate::canCreate($context->getActor()) && Gate::canReward($context->getActor())),
         ]),
 
     (new Extend\Conditional())

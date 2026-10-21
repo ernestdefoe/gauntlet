@@ -146,6 +146,10 @@ class Presenter
                 'scheduledAt' => $m->scheduled_at?->toIso8601String(),
                 'completedAt' => $m->completed_at?->toIso8601String(),
                 'picksEventId' => $m->picks_event_id,
+                // Where the winner and loser go, so the client draws the
+                // bracket's lines without its own copy of the rules.
+                'next' => $m->next_bracket ? [Engine\Builder::key($m->next_bracket, (int) $m->next_round, (int) $m->next_position), $m->next_slot] : null,
+                'loser' => $m->loser_bracket ? [Engine\Builder::key($m->loser_bracket, (int) $m->loser_round, (int) $m->loser_position), $m->loser_slot] : null,
                 'game' => $m->picks_event_id ? ($games[$m->picks_event_id] ?? null) : null,
             ];
 

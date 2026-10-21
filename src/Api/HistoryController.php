@@ -68,7 +68,7 @@ class HistoryController implements RequestHandlerInterface
             ->where('played', '>', 0)
             ->orderByDesc('rating')
             ->limit(20)
-            ->get(['game', 'rating', 'played', 'wins', 'losses', 'draws']);
+            ->get(['game', 'game_label', 'rating', 'played', 'wins', 'losses', 'draws']);
 
         return new JsonResponse(['data' => [
             'entries' => $entries->map(fn ($r) => [
@@ -83,7 +83,7 @@ class HistoryController implements RequestHandlerInterface
                 'possible' => (int) $r->possible, 'place' => (int) $r->ahead + 1,
             ])->all(),
             'ratings' => $ratings->map(fn ($r) => [
-                'game' => $r->game, 'rating' => (int) $r->rating, 'played' => (int) $r->played,
+                'game' => $r->game_label !== '' ? $r->game_label : $r->game, 'rating' => (int) $r->rating, 'played' => (int) $r->played,
                 'wins' => (int) $r->wins, 'losses' => (int) $r->losses, 'draws' => (int) $r->draws,
             ])->all(),
         ]]);

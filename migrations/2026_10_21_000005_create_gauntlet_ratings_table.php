@@ -9,7 +9,9 @@ return Migration::createTable('gauntlet_ratings', function (Blueprint $table) {
     // user | group
     $table->string('subject_type', 5);
     $table->unsignedBigInteger('subject_id');
+    // The game as a key (lower case) and as last written, for showing.
     $table->string('game', 80)->default('');
+    $table->string('game_label', 80)->default('');
     $table->smallInteger('rating')->default(1500);
     $table->unsignedInteger('played')->default(0);
     $table->unsignedInteger('wins')->default(0);

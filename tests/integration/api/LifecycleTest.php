@@ -47,7 +47,7 @@ class LifecycleTest extends GauntletTestCase
         [$status, $history] = $this->json('GET', '/api/gauntlet/users/'.$champion['user']['id'], 2);
         $this->assertSame(200, $status);
         $this->assertSame(1, $history['data']['entries'][0]['finalRank']);
-        $this->assertSame('chess', $history['data']['ratings'][0]['game']);
+        $this->assertSame('Chess', $history['data']['ratings'][0]['game'], 'shown as written, kept per game case-insensitively');
     }
 
     #[Test]
