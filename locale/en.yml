@@ -322,6 +322,10 @@ ernestdefoe-gauntlet:
         confirmation:
           agree: Final when both sides agree
           staff: Always confirmed by an organiser
+    discussion:
+      tournament_body: "This is the discussion for **{title}**. The bracket, the entrants and the results: {url}"
+      match_title: "{tournament}: {one} vs {two}"
+      match_body: "The discussion for this match of **{title}**. Report the result on the tournament page: {url}"
     profile:
       nav: Tournaments
       empty: No tournaments yet.
