@@ -1,0 +1,74 @@
+ernestdefoe-gauntlet:
+  api:
+    already_entered: You are already in this tournament.
+    already_published: This tournament is already open for sign-ups.
+    badge: That badge doesn't exist.
+    best_of: Best of must be an odd number.
+    both_scores: Enter both scores.
+    cannot_cancel: A finished or cancelled tournament can't be cancelled.
+    cannot_reset: Only a running tournament can be reset.
+    cannot_start: Only a tournament open for sign-ups can be started.
+    cannot_withdraw: This entry can't be withdrawn now.
+    captain_cannot_leave: A captain leaves by withdrawing the team.
+    checkin_closed: Check-in isn't open.
+    checkin_needs_start: Check-in needs a start time.
+    choice: Choose one of the options.
+    date: Enter a valid date and time.
+    description: The description can be at most 5,000 characters.
+    entrants_cannot_predict: Players in this tournament can't fill in a prediction bracket for it.
+    field_locked: The field can't be changed once the tournament has started.
+    full: This tournament is full.
+    game: The game can be at most 80 characters.
+    group_already_entered: That group is already entered.
+    invalid_pick: One of your picks isn't possible in this bracket.
+    locked_after_publish: This can't be changed once sign-ups are open.
+    locked_after_start: This can't be changed once the tournament has started.
+    logo_url: The logo must be an https:// image address.
+    max_entrants: "This format allows at most {max} entrants."
+    no_draws: This tournament doesn't allow draws.
+    not_correctable: This result can't be changed any more — a later match has already been played or reported.
+    not_group_captain: You can only enter a group you created or moderate.
+    not_group_member: Only members of this group can join its team.
+    not_open: This match isn't waiting for a result.
+    number: "Enter a whole number from {min} to {max}."
+    picks_game: That Picks game doesn't exist.
+    picks_team: That Picks team doesn't exist.
+    points: Enter up to 12 point values.
+    predictions_closed: Predictions are closed.
+    predictions_need_staff_single: A prediction bracket must be single elimination with the field entered by the organiser.
+    registration_closed: Sign-ups are closed.
+    score_range: Scores go from 0 to 9,999.
+    tag: You can't start discussions in that tag.
+    team_closed: Teams can't be changed now.
+    team_full: This team is full.
+    team_name: Enter a name of up to 100 characters.
+    title: Enter a title of up to 150 characters.
+    too_few_entrants: A tournament needs at least two entrants to start.
+    too_many_entrants: There are more entrants than this format allows.
+    winner_contradicts_score: The winner doesn't match the score.
+    winner_or_scores: Choose a winner or enter the score.
+
+  email:
+    open: Open the tournament
+    match_ready:
+      subject: "Your match in {title} is ready"
+      title: Your match is ready
+      body: "Your next match in {title} is ready to play."
+    dispute:
+      subject: "A result in {title} is disputed"
+      title: A result is disputed
+      body: "The two sides reported different results for a match in {title}. Your decision settles it."
+    checkin:
+      subject: "Check-in is open for {title}"
+      title: Check-in is open
+      body: "Check in for {title} to keep your place. Anyone not checked in when it starts is left out."
+    promoted:
+      subject: "You're in {title}"
+      title: You're off the waitlist
+      body: "A place opened up and you're now in the field for {title}."
+
+  admin:
+    badges:
+      tournaments_won: Tournaments won
+      tournaments_podium: Tournament podium finishes (top 3)
+      tournaments_played: Tournaments played to the finish
