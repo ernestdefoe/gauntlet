@@ -126,7 +126,9 @@ export default class Bracket extends Component<BracketAttrs> {
     const ids = [match.entrant1Id, match.entrant2Id];
     const live = match.game && match.game.status === 'in_progress';
     const bye = match.status === 'bye';
-    const clickable = !predicting && !!this.attrs.onOpen && !bye && match.status !== 'void';
+    // A match still waiting for its sides has nothing in it for members.
+    const clickable =
+      !predicting && !!this.attrs.onOpen && !bye && match.status !== 'void' && (match.status !== 'pending' || this.attrs.tournament.me.canManage);
 
     const classes = ['Gauntlet-match', `is-${match.status}`];
     if (live) classes.push('is-live');

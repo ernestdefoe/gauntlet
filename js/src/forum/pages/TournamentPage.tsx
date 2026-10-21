@@ -416,7 +416,12 @@ export default class TournamentPage extends Page {
             <h3 className="Gauntlet-roundTitle">{label}</h3>
             <div className="Gauntlet-matches">
               {matches.map((x) => (
-                <button type="button" className="Gauntlet-matchCard" onclick={() => this.open(x)} disabled={x.status === 'bye'}>
+                <button
+                  type="button"
+                  className="Gauntlet-matchCard"
+                  onclick={() => this.open(x)}
+                  disabled={x.status === 'bye' || (x.status === 'pending' && !tt.me.canManage)}
+                >
                   <header>
                     <span className={'Gauntlet-pill is-' + x.status}>{t('match.status.' + x.status)}</span>
                     {x.scheduledAt ? <span>{formatDate(x.scheduledAt)}</span> : null}
