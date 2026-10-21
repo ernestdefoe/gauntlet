@@ -65,7 +65,8 @@ class PredictionTest extends GauntletTestCase
         $semi2 = $this->match($t, 'W:1:2');
         $this->json('POST', "/api/gauntlet/matches/{$semi2['id']}/resolve", 1, ['score1' => 20, 'score2' => 27]);
         $final = $this->match($this->show($t['id']), 'W:2:1');
-        [$status, $body] = $this->json('POST', "/api/gauntlet/matches/{$final['id']}/resolve", 1, ['score1' => 21, 'score2' => 24]);
+        [$status, $body, $raw] = $this->json('POST', "/api/gauntlet/matches/{$final['id']}/resolve", 1, ['score1' => 21, 'score2' => 24]);
+        $this->assertSame(200, $status, substr($raw, 0, 600));
         $this->assertSame('finished', $body['data']['status']);
 
         [, $board] = $this->json('GET', "/api/gauntlet/tournaments/{$t['id']}/predictions", 3);

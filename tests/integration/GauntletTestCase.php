@@ -32,7 +32,7 @@ abstract class GauntletTestCase extends TestCase
      */
     protected function allowedRepeatedQueries(): array
     {
-        return ['unsubscribe_tokens', 'users"."id" = ? limit ?'];
+        return ['unsubscribe_tokens', 'users"."id" = ? limit ?', 'users`.`id` = ? limit ?'];
     }
 
     protected function tearDown(): void

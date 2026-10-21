@@ -10,7 +10,9 @@ return Migration::createTable('gauntlet_predictions', function (Blueprint $table
     // {"W:2:1": entrantId, ...}: the member's winner for every match.
     $table->text('picks');
     // The final's combined score, to break ties.
-    $table->unsignedSmallInteger('tiebreaker')->nullable();
+    // Signed: the board sorts on ABS(tiebreaker - total), which MySQL
+    // refuses to compute on an unsigned column when it goes negative.
+    $table->smallInteger('tiebreaker')->nullable();
     $table->unsignedInteger('score')->default(0);
     $table->unsignedSmallInteger('correct')->default(0);
     $table->unsignedInteger('possible')->default(0);
