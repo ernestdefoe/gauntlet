@@ -52,7 +52,7 @@ return Migration::createTable('gauntlet_tournaments', function (Blueprint $table
     $table->dateTime('finished_at')->nullable();
     $table->timestamps();
 
-    $table->index(['status', 'starts_at']);
+    $table->index(['status', 'starts_at'], 'gauntlet_tournaments_status_idx');
     $table->index('user_id');
     $table->foreign('user_id')->references('id')->on('users')->nullOnDelete();
     $table->foreign('discussion_id')->references('id')->on('discussions')->nullOnDelete();

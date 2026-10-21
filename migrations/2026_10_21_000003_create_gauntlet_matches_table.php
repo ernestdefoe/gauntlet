@@ -45,7 +45,8 @@ return Migration::createTable('gauntlet_matches', function (Blueprint $table) {
     $table->dateTime('completed_at')->nullable();
     $table->timestamps();
 
-    $table->unique(['tournament_id', 'bracket', 'round', 'position']);
+    // Named: the generated name passes MySQL's 64 characters with a table prefix.
+    $table->unique(['tournament_id', 'bracket', 'round', 'position'], 'gauntlet_matches_slot_unique');
     $table->index('picks_event_id');
     $table->index('entrant1_id');
     $table->index('entrant2_id');

@@ -19,5 +19,5 @@ return Migration::createTable('gauntlet_ratings', function (Blueprint $table) {
     $table->unsignedInteger('draws')->default(0);
     $table->timestamps();
 
-    $table->unique(['subject_type', 'subject_id', 'game']);
+    $table->unique(['subject_type', 'subject_id', 'game'], 'gauntlet_ratings_subject_unique');
 });

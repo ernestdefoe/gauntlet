@@ -25,7 +25,7 @@ return Migration::createTable('gauntlet_entrants', function (Blueprint $table) {
     $table->unsignedSmallInteger('draws')->default(0);
     $table->timestamps();
 
-    $table->index(['tournament_id', 'status']);
+    $table->index(['tournament_id', 'status'], 'gauntlet_entrants_status_idx');
     $table->index('user_id');
     $table->foreign('tournament_id')->references('id')->on('gauntlet_tournaments')->cascadeOnDelete();
     $table->foreign('user_id')->references('id')->on('users')->nullOnDelete();

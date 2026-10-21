@@ -15,7 +15,7 @@ return Migration::createTable('gauntlet_entrant_members', function (Blueprint $t
 
     $table->primary(['entrant_id', 'user_id']);
     // One entry per member per tournament, enforced by the database.
-    $table->unique(['tournament_id', 'user_id']);
+    $table->unique(['tournament_id', 'user_id'], 'gauntlet_members_once_unique');
     $table->index('user_id');
     $table->foreign('entrant_id')->references('id')->on('gauntlet_entrants')->cascadeOnDelete();
     $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();

@@ -16,8 +16,8 @@ return Migration::createTable('gauntlet_predictions', function (Blueprint $table
     $table->unsignedInteger('possible')->default(0);
     $table->timestamps();
 
-    $table->unique(['tournament_id', 'user_id']);
-    $table->index(['tournament_id', 'score']);
+    $table->unique(['tournament_id', 'user_id'], 'gauntlet_predictions_once_unique');
+    $table->index(['tournament_id', 'score'], 'gauntlet_predictions_score_idx');
     $table->index('user_id');
     $table->foreign('tournament_id')->references('id')->on('gauntlet_tournaments')->cascadeOnDelete();
     $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
