@@ -107,7 +107,9 @@ export default class EditorPage extends Page {
           {this.entry()}
           {this.play()}
           {this.values.format === 'single' && this.values.entryMode === 'staff' ? this.predictionFields() : null}
-          {app.forum.attribute('canRewardTournaments') ? this.rewards() : null}
+          {app.forum.attribute('canRewardTournaments') && (app.forum.attribute('tournamentPointsAvailable') || this.badges.length)
+            ? this.rewards()
+            : null}
           <Button type="submit" className="Button Button--primary" loading={this.saving}>
             {t(this.id ? 'editor.save' : 'editor.create')}
           </Button>
@@ -281,7 +283,7 @@ export default class EditorPage extends Page {
       <fieldset>
         <legend>{t('editor.rewards')}</legend>
         <div className="Gauntlet-grid2">
-          {[0, 1, 2].map((i) => (
+          {(app.forum.attribute('tournamentPointsAvailable') ? [0, 1, 2] : []).map((i) => (
             <div className="Form-group">
               <label htmlFor={'gauntlet-reward' + i}>{t('editor.reward_place', { place: i + 1 })}</label>
               <input
@@ -358,8 +360,10 @@ export default class EditorPage extends Page {
         .map(Number);
     }
 
-    if (app.forum.attribute('canRewardTournaments')) {
+    if (app.forum.attribute('canRewardTournaments') && app.forum.attribute('tournamentPointsAvailable')) {
       data.rewardPoints = v.rewardPoints.map((p: string) => Number(p) || 0);
+    }
+    if (app.forum.attribute('canRewardTournaments') && this.badges.length) {
       data.rewardBadgeId = v.rewardBadgeId || null;
     }
 

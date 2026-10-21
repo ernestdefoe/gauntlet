@@ -19,6 +19,7 @@ use ErnestDefoe\Gauntlet\Integration\Badges\BadgesProvider;
 use ErnestDefoe\Gauntlet\Integration\Picks\PicksBridge;
 use ErnestDefoe\Gauntlet\Listener\Announce;
 use ErnestDefoe\Gauntlet\Notification;
+use ErnestDefoe\Gauntlet\Rewards;
 use ErnestDefoe\Gauntlet\Tournament;
 use Flarum\Api\Context;
 use Flarum\Api\Resource\ForumResource;
@@ -107,6 +108,10 @@ return [
                 ->get(fn ($forum, Context $context) => Gate::canCreate($context->getActor())),
             Schema\Boolean::make('canRewardTournaments')
                 ->get(fn ($forum, Context $context) => Gate::canCreate($context->getActor()) && Gate::canReward($context->getActor())),
+            // Only for those who can attach prizes: whether points can be paid at all.
+            Schema\Boolean::make('tournamentPointsAvailable')
+                ->visible(fn ($forum, Context $context) => Gate::canReward($context->getActor()))
+                ->get(fn () => resolve(Rewards::class)->pointsAvailable()),
         ]),
 
     (new Extend\Conditional())
