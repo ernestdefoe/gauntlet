@@ -55,20 +55,27 @@ class Presenter
         $manages = Gate::canManage($actor, $tournament);
 
         $entrants = Entrant::query()->where('tournament_id', $tournament->id)->orderBy('id')->get()->keyBy('id');
-        $memberRows = $this->db->table('gauntlet_entrant_members')->where('tournament_id', $tournament->id)->orderBy('joined_at')->get(['entrant_id', 'user_id']);
+        $memberRows = $this->db->table('gauntlet_entrant_members')->where('tournament_id', $tournament->id)->orderBy('joined_at')->get(['entrant_id', 'user_id', 'approved']);
         $userIds = $memberRows->pluck('user_id')->merge($entrants->pluck('user_id'))->filter()->unique()->values()->all();
         $users = $userIds ? User::query()->whereVisibleTo($actor)->whereIn('id', $userIds)->get()->keyBy('id') : new Collection();
         $matches = Fixture::query()->where('tournament_id', $tournament->id)->orderBy('bracket')->orderBy('round')->orderBy('position')->get();
 
         $members = [];
-        foreach ($memberRows as $row) {
-            $members[(int) $row->entrant_id][] = (int) $row->user_id;
-        }
-
+        $pending = [];
         $mine = null;
-        foreach ($members as $entrantId => $ids) {
-            if (in_array($actor->id, $ids, true)) {
-                $mine = $entrantId;
+        $asked = null;
+        foreach ($memberRows as $row) {
+            if ($row->approved) {
+                $members[(int) $row->entrant_id][] = (int) $row->user_id;
+            } else {
+                $pending[(int) $row->entrant_id][] = (int) $row->user_id;
+            }
+            if ((int) $row->user_id === $actor->id) {
+                if ($row->approved) {
+                    $mine = (int) $row->entrant_id;
+                } else {
+                    $asked = (int) $row->entrant_id;
+                }
             }
         }
 
@@ -103,7 +110,7 @@ class Presenter
             $data['rewardBadgeId'] = $tournament->reward_badge_id;
         }
 
-        $data['entrants'] = $entrants->map(function (Entrant $e) use ($users, $members, $ratings, $teams) {
+        $data['entrants'] = $entrants->map(function (Entrant $e) use ($users, $members, $pending, $ratings, $teams, $actor, $manages) {
             $team = $e->picks_team_id ? ($teams[$e->picks_team_id] ?? null) : null;
             $row = [
                 'id' => $e->id,
@@ -122,6 +129,11 @@ class Presenter
                 'rating' => $ratings[$e->id] ?? null,
                 'members' => array_values(array_filter(array_map(fn (int $id) => $this->user($users->get($id)), $members[$e->id] ?? []))),
             ];
+
+            // Requests to join: for the captain and organisers to answer.
+            if ($manages || ($e->user_id !== null && $e->user_id === $actor->id)) {
+                $row['requests'] = array_values(array_filter(array_map(fn (int $id) => $this->user($users->get($id)), $pending[$e->id] ?? [])));
+            }
 
             return $row;
         })->values()->all();
@@ -179,10 +191,11 @@ class Presenter
 
         $data['me'] = [
             'entrantId' => $mine,
+            'requestedEntrantId' => $asked,
             'canManage' => $manages,
             'canReward' => $manages && Gate::canReward($actor),
             'canJoin' => Gate::canJoin($actor),
-            'canPredict' => $tournament->predictions && Gate::canPredict($actor) && $mine === null,
+            'canPredict' => $tournament->predictions && Gate::canPredict($actor) && $mine === null && $asked === null && ! ($manages && $tournament->hasPrizes()),
             'predictionsOpen' => $tournament->predictions && $this->predictions->open($tournament),
             'groups' => $tournament->isTeam() && $tournament->status === Tournament::REGISTRATION ? $this->teams->captainedGroups($actor) : [],
             'prediction' => null,

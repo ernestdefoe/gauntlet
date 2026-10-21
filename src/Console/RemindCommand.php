@@ -47,7 +47,10 @@ class RemindCommand extends Command
             }
 
             $ids = Entrant::query()->where('tournament_id', $tournament->id)->whereIn('status', [Entrant::REGISTERED, Entrant::WAITLISTED])->pluck('id')->all();
-            $users = array_merge([], ...array_values($announce->members($tournament, $ids)));
+            $users = array_values(array_filter(
+                array_merge([], ...array_values($announce->members($tournament, $ids))),
+                fn ($user) => \ErnestDefoe\Gauntlet\Access\Gate::canView($user, $tournament)
+            ));
             if ($users) {
                 $notifications->sync(new CheckinBlueprint($tournament), $users);
             }

@@ -66,6 +66,8 @@ class MatchesController implements RequestHandlerInterface
                 $this->discussions->forMatches($tournament->loadMissing('user'), [$match->setRelation('tournament', $tournament)], true);
             } else {
                 $this->update($match, $body);
+                // A linked game may have just settled the match, through its own copy.
+                $tournament->refresh();
             }
         }
 
@@ -83,20 +85,16 @@ class MatchesController implements RequestHandlerInterface
             }
         }
 
-        $settle = false;
-        if (array_key_exists('picksEventId', $body)) {
-            $id = $this->intOrNull($body['picksEventId']);
-            if ($id !== null && ! $this->picks->games([$id])) {
-                throw new ValidationException(['picksEventId' => $this->translator->trans('ernestdefoe-gauntlet.api.picks_game')]);
-            }
-            $match->picks_event_id = $id;
-            $settle = $id !== null;
-        }
-
         $match->save();
 
-        if ($settle) {
-            $this->picks->settleFromGame((int) $match->picks_event_id);
+        if (array_key_exists('picksEventId', $body)) {
+            $id = $this->intOrNull($body['picksEventId']);
+            if ($id === null) {
+                $match->picks_event_id = null;
+                $match->save();
+            } elseif (! $this->picks->link($match, $id)) {
+                throw new ValidationException(['picksEventId' => $this->translator->trans('ernestdefoe-gauntlet.api.picks_game')]);
+            }
         }
     }
 }

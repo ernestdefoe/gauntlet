@@ -46,6 +46,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $prediction_count
  * @property int $current_round
  * @property Carbon|null $checkin_notified_at
+ * @property Carbon|null $rewarded_at
  * @property Carbon|null $started_at
  * @property Carbon|null $finished_at
  * @property Carbon $created_at
@@ -94,6 +95,7 @@ class Tournament extends AbstractModel
         'prediction_count' => 'integer',
         'current_round' => 'integer',
         'checkin_notified_at' => 'datetime',
+        'rewarded_at' => 'datetime',
         'started_at' => 'datetime',
         'finished_at' => 'datetime',
     ];
@@ -201,6 +203,11 @@ class Tournament extends AbstractModel
         }
 
         return 10 * (2 ** ($round - 1));
+    }
+
+    public function hasPrizes(): bool
+    {
+        return (bool) $this->reward_badge_id || array_filter((array) $this->reward_points);
     }
 
     public function gameKey(): string

@@ -63,6 +63,7 @@ return [
         ->post('/gauntlet/entrants/{id:[0-9]+}/checkin', 'gauntlet.entrants.checkin', Api\EntrantsController::class)
         ->delete('/gauntlet/entrants/{id:[0-9]+}/checkin', 'gauntlet.entrants.checkout', Api\EntrantsController::class)
         ->post('/gauntlet/entrants/{id:[0-9]+}/members', 'gauntlet.entrants.join', Api\EntrantsController::class)
+        ->post('/gauntlet/entrants/{id:[0-9]+}/members/{user:[0-9]+}', 'gauntlet.entrants.approve', Api\EntrantsController::class)
         ->delete('/gauntlet/entrants/{id:[0-9]+}/members/{user:[0-9]+}', 'gauntlet.entrants.leave', Api\EntrantsController::class)
         ->post('/gauntlet/matches/{id:[0-9]+}/report', 'gauntlet.matches.report', Api\MatchesController::class)
         ->post('/gauntlet/matches/{id:[0-9]+}/resolve', 'gauntlet.matches.resolve', Api\MatchesController::class)

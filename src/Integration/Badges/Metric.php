@@ -35,6 +35,7 @@ class Metric implements MetricInterface
             ->join('gauntlet_entrants', 'gauntlet_entrants.id', '=', 'gauntlet_entrant_members.entrant_id')
             ->join('gauntlet_tournaments', 'gauntlet_tournaments.id', '=', 'gauntlet_entrants.tournament_id')
             ->where('gauntlet_entrant_members.user_id', $user->id)
+            ->where('gauntlet_entrant_members.approved', true)
             ->where('gauntlet_tournaments.status', 'finished')
             ->whereNotNull('gauntlet_entrants.final_rank');
 

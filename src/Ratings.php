@@ -144,7 +144,8 @@ class Ratings
         $now = Carbon::now();
 
         if (! $this->db->table('gauntlet_ratings')->where($key)->exists()) {
-            $this->db->table('gauntlet_ratings')->insert($key + ['rating' => self::START, 'game_label' => (string) $label, 'created_at' => $now, 'updated_at' => $now]);
+            // Ignored if a result in another tournament created it a moment ago.
+            $this->db->table('gauntlet_ratings')->insertOrIgnore($key + ['rating' => self::START, 'game_label' => (string) $label, 'created_at' => $now, 'updated_at' => $now]);
         }
 
         $this->db->table('gauntlet_ratings')->where($key)->update(($label !== null ? ['game_label' => $label] : []) + [

@@ -46,6 +46,8 @@ export interface Entrant {
   draws: number;
   rating: number | null;
   members: Person[];
+  /** Requests to join, for the captain and organisers. */
+  requests?: Person[];
 }
 
 export interface Game {
@@ -134,6 +136,7 @@ export interface Tournament extends Summary {
   standings?: StandingRow[];
   me: {
     entrantId: number | null;
+    requestedEntrantId: number | null;
     canManage: boolean;
     canReward: boolean;
     canJoin: boolean;
@@ -196,6 +199,7 @@ export const api = {
   checkIn: (id: number, undo = false): Full => call(undo ? 'DELETE' : 'POST', `/entrants/${id}/checkin`),
   join: (id: number): Full => call('POST', `/entrants/${id}/members`),
   leave: (id: number, userId: number): Full => call('DELETE', `/entrants/${id}/members/${userId}`),
+  approve: (id: number, userId: number): Full => call('POST', `/entrants/${id}/members/${userId}`),
   report: (id: number, score1: number, score2: number): Full => call('POST', `/matches/${id}/report`, { score1, score2 }),
   resolve: (id: number, data: { score1?: number | null; score2?: number | null; winner?: 1 | 2 | null }): Full =>
     call('POST', `/matches/${id}/resolve`, data),

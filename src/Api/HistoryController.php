@@ -42,6 +42,7 @@ class HistoryController implements RequestHandlerInterface
             ->join('gauntlet_entrants as e', 'e.id', '=', 'm.entrant_id')
             ->join('gauntlet_tournaments as t', 't.id', '=', 'e.tournament_id')
             ->where('m.user_id', $user->id)
+            ->where('m.approved', true)
             ->whereIn('t.id', $visible)
             ->orderByDesc('t.id')
             ->limit(50)

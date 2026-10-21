@@ -19,7 +19,8 @@ use Psr\Http\Server\RequestHandlerInterface;
  * PATCH  /gauntlet/entrants/{id}                  organiser: seed, waitlist, name, logo, Picks team
  * DELETE /gauntlet/entrants/{id}                  withdraw (?disqualify=1 for organisers)
  * POST   /gauntlet/entrants/{id}/checkin          check in (DELETE to undo)
- * POST   /gauntlet/entrants/{id}/members          join a team
+ * POST   /gauntlet/entrants/{id}/members          join a team (a request, for an ad-hoc team)
+ * POST   /gauntlet/entrants/{id}/members/{user}   the captain approves a request
  * DELETE /gauntlet/entrants/{id}/members/{user}   leave, or take someone off.
  */
 class EntrantsController implements RequestHandlerInterface
@@ -88,6 +89,9 @@ class EntrantsController implements RequestHandlerInterface
                 break;
             case 'gauntlet.entrants.join':
                 $this->director->joinTeam($entrant, $actor);
+                break;
+            case 'gauntlet.entrants.approve':
+                $this->director->approveMember($entrant, $this->routeId($request, 'user'), $actor);
                 break;
             case 'gauntlet.entrants.leave':
                 $this->director->removeMember($entrant, $this->routeId($request, 'user'), $actor);

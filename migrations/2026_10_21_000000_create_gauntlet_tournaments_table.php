@@ -46,6 +46,8 @@ return Migration::createTable('gauntlet_tournaments', function (Blueprint $table
     $table->unsignedInteger('prediction_count')->default(0);
     $table->unsignedSmallInteger('current_round')->default(0);
     $table->dateTime('checkin_notified_at')->nullable();
+    // Prizes are paid once; a corrected final does not pay again.
+    $table->dateTime('rewarded_at')->nullable();
     $table->dateTime('started_at')->nullable();
     $table->dateTime('finished_at')->nullable();
     $table->timestamps();

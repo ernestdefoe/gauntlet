@@ -4,6 +4,7 @@ namespace ErnestDefoe\Gauntlet;
 
 use ErnestDefoe\Gauntlet\Access\Gate;
 use ErnestDefoe\Gauntlet\Engine\Builder;
+use ErnestDefoe\Gauntlet\Integration\Picks\PicksBridge;
 use Flarum\Foundation\ValidationException;
 use Flarum\Locale\TranslatorInterface;
 use Flarum\User\Exception\PermissionDeniedException;
@@ -22,22 +23,28 @@ use Illuminate\Database\ConnectionInterface;
  */
 class Predictions
 {
-    public function __construct(private ConnectionInterface $db, private TranslatorInterface $translator)
+    public function __construct(private ConnectionInterface $db, private TranslatorInterface $translator, private PicksBridge $picks)
     {
     }
 
-    /** Picks close at the lock time, or with the first real result when none is set. */
+    /**
+     * Picks close at whichever comes first: the lock time, the first result,
+     * or kick-off of the first game linked in Picks. A lock time set later
+     * than the first game never lets anyone pick with the score known.
+     */
     public function open(Tournament $tournament): bool
     {
         if (! $tournament->predictionsOpen()) {
             return false;
         }
 
-        if ($tournament->predictions_lock_at !== null) {
-            return true;
+        if (Fixture::query()->where('tournament_id', $tournament->id)->where('status', Fixture::COMPLETED)->exists()) {
+            return false;
         }
 
-        return ! Fixture::query()->where('tournament_id', $tournament->id)->where('status', Fixture::COMPLETED)->exists();
+        $games = Fixture::query()->where('tournament_id', $tournament->id)->whereNotNull('picks_event_id')->pluck('picks_event_id')->all();
+
+        return ! $this->picks->anyUnderway($games);
     }
 
     /** @param array<string, mixed> $picks */
@@ -50,6 +57,11 @@ class Predictions
         // Entrants in a members' tournament could throw a match to win their own bracket.
         if ($this->db->table('gauntlet_entrant_members')->where('tournament_id', $tournament->id)->where('user_id', $actor->id)->exists()) {
             $this->fail('picks', 'entrants_cannot_predict');
+        }
+
+        // Whoever settles the results can't also play for the prizes.
+        if ($tournament->hasPrizes() && Gate::canManage($actor, $tournament)) {
+            $this->fail('picks', 'organisers_cannot_predict');
         }
 
         return $this->db->transaction(function () use ($tournament, $actor, $picks, $tiebreaker) {

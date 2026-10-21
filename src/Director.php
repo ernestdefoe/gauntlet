@@ -81,7 +81,7 @@ class Director
                         $this->fail('groupId', 'group_already_entered');
                     }
                     $entrant->group_id = $groupId;
-                    $entrant->name = $group['name'];
+                    $entrant->name = mb_substr($group['name'], 0, 100);
                 } else {
                     $entrant->name = $this->teamName($data['name'] ?? '');
                 }
@@ -137,16 +137,40 @@ class Director
 
             $this->assertNotEntered($tournament, $actor->id);
 
-            if ($tournament->team_size > 0 && $entrant->members()->count() >= $tournament->team_size) {
-                $this->fail('entrant', 'team_full');
-            }
+            $this->assertRoom($tournament, $entrant);
 
             if ($entrant->group_id && ! $this->teams->isGroupMember($actor, (int) $entrant->group_id)) {
                 $this->fail('entrant', 'not_group_member');
             }
 
-            $this->addMember($tournament, $entrant, $actor->id);
+            // A group's members are its team already; anyone else asks the
+            // captain, so nobody can crowd a roster or ride on a winning team.
+            $this->addMember($tournament, $entrant, $actor->id, (bool) $entrant->group_id);
         });
+    }
+
+    /** The captain (or an organiser) takes a request to join onto the roster. */
+    public function approveMember(Entrant $entrant, int $userId, User $actor): void
+    {
+        $this->atomically($entrant->tournament, function (Tournament $tournament) use ($entrant, $userId, $actor) {
+            if ($actor->id !== $entrant->user_id && ! Gate::canManage($actor, $tournament)) {
+                throw new PermissionDeniedException();
+            }
+            if (! $tournament->isTeam() || $tournament->status !== Tournament::REGISTRATION) {
+                $this->fail('entrant', 'team_closed');
+            }
+
+            $this->assertRoom($tournament, $entrant);
+
+            $this->db->table('gauntlet_entrant_members')->where('entrant_id', $entrant->id)->where('user_id', $userId)->update(['approved' => true]);
+        });
+    }
+
+    private function assertRoom(Tournament $tournament, Entrant $entrant): void
+    {
+        if ($tournament->team_size > 0 && $this->db->table('gauntlet_entrant_members')->where('entrant_id', $entrant->id)->where('approved', true)->count() >= $tournament->team_size) {
+            $this->fail('entrant', 'team_full');
+        }
     }
 
     /** A member leaves a team, or its captain or an organiser takes them off it. */
@@ -283,6 +307,9 @@ class Director
             if ($field->count() > (Saver::CAPS[$tournament->format] ?? 256)) {
                 $this->fail('tournament', 'too_many_entrants');
             }
+
+            // Requests the captain never answered lapse with the start.
+            $this->db->table('gauntlet_entrant_members')->where('tournament_id', $tournament->id)->where('approved', false)->delete();
 
             $ordered = $this->seedOrder($tournament, $field);
             $ids = array_map(fn (Entrant $e) => $e->id, $ordered);
@@ -459,6 +486,11 @@ class Director
             }
 
             if ($match->status === Fixture::COMPLETED) {
+                // Prizes are paid once. Changing who won them is for someone
+                // who could have set them (an organiser might be a finalist's alt).
+                if ($tournament->status === Tournament::FINISHED && $tournament->hasPrizes() && ! Gate::canReward($actor)) {
+                    $this->fail('match', 'prizes_paid');
+                }
                 $this->correct($tournament, $match);
             } elseif (! in_array($match->status, Fixture::LIVE, true)) {
                 $this->fail('match', 'not_open');
@@ -558,8 +590,9 @@ class Director
         if ($tournament->format === 'swiss') {
             $current = array_filter($fixtures, fn (Fixture $f) => $f->round === $tournament->current_round);
             $roundDone = ! array_filter($current, fn (Fixture $f) => in_array($f->status, Fixture::LIVE, true));
-            if ($roundDone && $tournament->current_round < $this->swissRounds($tournament)) {
-                $active = $entrants->filter(fn (Entrant $e) => $e->status === Entrant::REGISTERED);
+            $active = $entrants->filter(fn (Entrant $e) => $e->status === Entrant::REGISTERED);
+            // With fewer than two left in it there is nobody to pair.
+            if ($roundDone && $tournament->current_round < $this->swissRounds($tournament) && $active->count() >= 2) {
                 $table = Standings::table($this->seeds($active), $fixtures, 'swiss');
                 $this->pairSwissRound($tournament, $fixtures, array_column($table, 'entrant'), $tournament->current_round + 1);
                 $tournament->current_round++;
@@ -1000,7 +1033,7 @@ class Director
         }
     }
 
-    private function addMember(Tournament $tournament, Entrant $entrant, int $userId): void
+    private function addMember(Tournament $tournament, Entrant $entrant, int $userId, bool $approved = true): void
     {
         try {
             $this->db->table('gauntlet_entrant_members')->insert([
@@ -1008,6 +1041,7 @@ class Director
                 'user_id' => $userId,
                 'tournament_id' => $tournament->id,
                 'joined_at' => Carbon::now(),
+                'approved' => $approved,
             ]);
         } catch (QueryException) {
             // The unique key caught a second entry racing this one.

@@ -188,6 +188,12 @@ export default class TournamentPage extends Page {
     if (tt.status === 'registration' && tt.entryMode === 'members') {
       if (!app.session.user) {
         items.push(<p className="Gauntlet-notice">{t('tournament.log_in')}</p>);
+      } else if (tt.me.requestedEntrantId) {
+        items.push(
+          <p className="Gauntlet-notice">
+            {t('tournament.request_sent', { name: entrantName(tt.entrants.find((e) => e.id === tt.me.requestedEntrantId)) })}
+          </p>
+        );
       } else if (!me && tt.me.canJoin) {
         items.push(
           tt.entryType === 'team' ? (
@@ -502,6 +508,19 @@ export default class TournamentPage extends Page {
                   {tt.entryType === 'team' && e.members.length ? (
                     <div className="Gauntlet-roster">{e.members.map((p) => p.displayName).join(', ')}</div>
                   ) : null}
+                  {e.requests?.length && tt.status === 'registration'
+                    ? e.requests.map((p) => (
+                        <div className="Gauntlet-roster">
+                          {t('entrants.request', { name: p.displayName })}{' '}
+                          <Button className="Button Button--text" onclick={() => this.run(api.approve(e.id, p.id))}>
+                            {t('entrants.approve')}
+                          </Button>
+                          <Button className="Button Button--text" onclick={() => this.run(api.leave(e.id, p.id))}>
+                            {t('entrants.decline')}
+                          </Button>
+                        </div>
+                      ))
+                    : null}
                 </td>
                 {tt.entryMode === 'members' ? <td className="num hide-phone">{e.rating ?? ''}</td> : null}
                 <td>
@@ -532,13 +551,18 @@ export default class TournamentPage extends Page {
                   </td>
                 ) : tt.entryType === 'team' && !me ? (
                   <td className="num">
-                    {tt.status === 'registration' &&
-                    tt.me.canJoin &&
-                    app.session.user &&
-                    e.status !== 'withdrawn' &&
-                    (!tt.teamSize || e.members.length < tt.teamSize) ? (
+                    {tt.me.requestedEntrantId === e.id ? (
+                      <Button className="Button Button--text" onclick={() => this.run(api.leave(e.id, Number(app.session.user!.id())))}>
+                        {t('entrants.cancel_request')}
+                      </Button>
+                    ) : !tt.me.requestedEntrantId &&
+                      tt.status === 'registration' &&
+                      tt.me.canJoin &&
+                      app.session.user &&
+                      e.status !== 'withdrawn' &&
+                      (!tt.teamSize || e.members.length < tt.teamSize) ? (
                       <Button className="Button" onclick={() => this.run(api.join(e.id))}>
-                        {t('entrants.join_team')}
+                        {e.groupId ? t('entrants.join_team') : t('entrants.ask_to_join')}
                       </Button>
                     ) : null}
                   </td>

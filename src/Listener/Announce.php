@@ -9,6 +9,7 @@ use ErnestDefoe\Gauntlet\Event;
 use ErnestDefoe\Gauntlet\Fixture;
 use ErnestDefoe\Gauntlet\Integration\Picks\PicksBridge;
 use ErnestDefoe\Gauntlet\Job\RescorePredictions;
+use ErnestDefoe\Gauntlet\Job\StartMatchDiscussions;
 use ErnestDefoe\Gauntlet\Notification;
 use ErnestDefoe\Gauntlet\Predictions;
 use ErnestDefoe\Gauntlet\Rewards;
@@ -51,7 +52,9 @@ class Announce
         $tournament = $event->tournament;
 
         $this->picks->autoLink($tournament, $event->matches);
-        $this->discussions->forMatches($tournament, $event->matches);
+        if ($tournament->match_discussions) {
+            $this->queue->push(new StartMatchDiscussions($tournament->id, array_map(fn (Fixture $m) => $m->id, $event->matches)));
+        }
 
         // The first round is announced by "the tournament has started".
         if ($tournament->isStaffEntered() || $event->atStart) {
@@ -129,7 +132,8 @@ class Announce
             return;
         }
 
-        $placed = Entrant::query()->where('tournament_id', $tournament->id)->whereNotNull('final_rank')->pluck('final_rank', 'id');
+        // A disqualified entrant keeps its place in the results, not a prize.
+        $placed = Entrant::query()->where('tournament_id', $tournament->id)->whereNotNull('final_rank')->where('status', '!=', Entrant::DISQUALIFIED)->pluck('final_rank', 'id');
         $members = $this->members($tournament, $placed->keys()->all());
 
         $byPlace = [];
@@ -139,7 +143,7 @@ class Announce
             }
         }
 
-        $this->rewards->pay($tournament, $byPlace);
+        $this->payOnce($tournament, $byPlace);
 
         // One notice for the whole field; each member's place is on the page.
         $this->send(new Notification\FinishedBlueprint($tournament), array_merge([], ...array_values($byPlace)), $tournament);
@@ -163,7 +167,25 @@ class Announce
             }
         }
 
-        $this->rewards->pay($tournament, $byPlace);
+        $this->payOnce($tournament, $byPlace);
+    }
+
+    /**
+     * Prizes go out once per tournament, claimed in one statement so a
+     * re-score or a corrected final never pays a second time.
+     *
+     * @param array<int, list<User>> $byPlace
+     */
+    private function payOnce(Tournament $tournament, array $byPlace): void
+    {
+        if (! $tournament->hasPrizes() || ! $byPlace) {
+            return;
+        }
+
+        $claimed = Tournament::query()->whereKey($tournament->id)->whereNull('rewarded_at')->update(['rewarded_at' => \Carbon\Carbon::now()]);
+        if ($claimed) {
+            $this->rewards->pay($tournament, $byPlace);
+        }
     }
 
     /**
@@ -179,7 +201,7 @@ class Announce
             return [];
         }
 
-        $rows = $this->db->table('gauntlet_entrant_members')->whereIn('entrant_id', $entrantIds)->get(['entrant_id', 'user_id']);
+        $rows = $this->db->table('gauntlet_entrant_members')->whereIn('entrant_id', $entrantIds)->where('approved', true)->get(['entrant_id', 'user_id']);
         // Groups come along: whether each recipient may still see the tournament is asked of every one.
         $users = User::query()->with('groups')->whereIn('id', $rows->pluck('user_id')->unique()->all())->get()->keyBy('id');
 

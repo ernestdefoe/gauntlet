@@ -112,6 +112,16 @@ class PicksBridge
         return $games;
     }
 
+    /** @param list<int> $ids whether any of these games has kicked off */
+    public function anyUnderway(array $ids): bool
+    {
+        if (! $ids || ! $this->available()) {
+            return false;
+        }
+
+        return $this->db->table('picks_events')->whereIn('id', array_values(array_unique($ids)))->where('status', '!=', 'scheduled')->exists();
+    }
+
     /** Games between two teams, newest first, for linking a match by hand. */
     public function gamesBetween(int $teamA, int $teamB): array
     {
@@ -130,7 +140,8 @@ class PicksBridge
 
     /**
      * When a match between two Picks teams opens, link it to their game:
-     * the most recent one not finished before the tournament began.
+     * the first one between them since the bracket was set. An earlier
+     * meeting (a regular-season game, a conference final) never counts.
      *
      * @param list<Fixture> $matches
      */
@@ -141,7 +152,7 @@ class PicksBridge
         }
 
         $entrants = Entrant::query()->where('tournament_id', $tournament->id)->whereNotNull('picks_team_id')->pluck('picks_team_id', 'id');
-        $since = ($tournament->started_at ?? Carbon::now())->copy()->subDays(14);
+        $since = $this->since($tournament);
 
         foreach ($matches as $match) {
             $a = $entrants[$match->entrant1_id] ?? null;
@@ -184,10 +195,10 @@ class PicksBridge
         $this->settleFromGame((int) $game->id);
     }
 
-    /** Complete every live match linked to a finished game. */
-    public function settleFromGame(int $gameId): void
+    /** Complete every live match linked to a finished game (or only $onlyMatch). */
+    public function settleFromGame(int $gameId, ?int $onlyMatch = null): void
     {
-        $game = $this->db->table('picks_events')->where('id', $gameId)->first(['home_team_id', 'away_team_id', 'home_score', 'away_score', 'result', 'status']);
+        $game = $this->db->table('picks_events')->where('id', $gameId)->first(['home_team_id', 'away_team_id', 'home_score', 'away_score', 'result', 'status', 'match_date']);
         if (! $game || $game->status !== 'finished' || ! in_array($game->result, ['home', 'away'], true)) {
             return;
         }
@@ -195,8 +206,10 @@ class PicksBridge
         $winnerTeam = (int) ($game->result === 'home' ? $game->home_team_id : $game->away_team_id);
         $scores = [(int) $game->home_team_id => $game->home_score, (int) $game->away_team_id => $game->away_score];
 
-        $matches = Fixture::query()->where('picks_event_id', $gameId)->whereIn('status', Fixture::LIVE)->with('tournament')->get()
-            ->merge($this->unlinkedBetween((int) $game->home_team_id, (int) $game->away_team_id, $gameId));
+        $matches = $onlyMatch !== null
+            ? Fixture::query()->whereKey($onlyMatch)->where('picks_event_id', $gameId)->whereIn('status', Fixture::LIVE)->with('tournament')->get()
+            : Fixture::query()->where('picks_event_id', $gameId)->whereIn('status', Fixture::LIVE)->with('tournament')->get()
+                ->merge($this->unlinkedBetween((int) $game->home_team_id, (int) $game->away_team_id, $gameId, $game->match_date ? Carbon::parse($game->match_date) : Carbon::now()));
         foreach ($matches as $match) {
             $teams = Entrant::query()->whereIn('id', [$match->entrant1_id, $match->entrant2_id])->pluck('picks_team_id', 'id');
             $winner = array_search($winnerTeam, $teams->all(), false);
@@ -222,7 +235,7 @@ class PicksBridge
      *
      * @return \Illuminate\Database\Eloquent\Collection<int, Fixture>
      */
-    private function unlinkedBetween(int $home, int $away, int $gameId): \Illuminate\Database\Eloquent\Collection
+    private function unlinkedBetween(int $home, int $away, int $gameId, Carbon $played): \Illuminate\Database\Eloquent\Collection
     {
         $ids = $this->db->table('gauntlet_matches as m')
             ->join('gauntlet_tournaments as t', 't.id', '=', 'm.tournament_id')
@@ -232,6 +245,8 @@ class PicksBridge
             ->whereIn('m.status', Fixture::LIVE)
             ->where('t.status', Tournament::RUNNING)
             ->where('t.entry_mode', 'staff')
+            // Only brackets set before this game was played (12 hours' grace, as autoLink).
+            ->where('t.started_at', '<=', $played->copy()->addHours(12))
             ->where(fn ($w) => $w->where(fn ($x) => $x->where('a.picks_team_id', $home)->where('b.picks_team_id', $away))
                 ->orWhere(fn ($x) => $x->where('a.picks_team_id', $away)->where('b.picks_team_id', $home)))
             ->pluck('m.id')
@@ -244,6 +259,43 @@ class PicksBridge
         Fixture::query()->whereIn('id', $ids)->update(['picks_event_id' => $gameId]);
 
         return Fixture::query()->whereIn('id', $ids)->with('tournament')->get();
+    }
+
+    /**
+     * The earliest a game can be part of this bracket: the bracket's start,
+     * with a few hours' grace for a field set on game day.
+     */
+    private function since(Tournament $tournament): Carbon
+    {
+        return ($tournament->started_at ?? Carbon::now())->copy()->subHours(12);
+    }
+
+    /**
+     * An organiser links a match to a game by hand: only a game between the
+     * match's own two teams, played since the bracket was set, and it
+     * settles only this match.
+     */
+    public function link(Fixture $match, int $gameId): bool
+    {
+        $tournament = $match->tournament;
+        $teams = Entrant::query()->whereIn('id', [$match->entrant1_id, $match->entrant2_id])->pluck('picks_team_id')->filter()->map(fn ($id) => (int) $id)->sort()->values()->all();
+        $game = $this->db->table('picks_events')->where('id', $gameId)->first(['home_team_id', 'away_team_id', 'match_date']);
+
+        if (! $game || count($teams) !== 2) {
+            return false;
+        }
+
+        $pair = [(int) $game->home_team_id, (int) $game->away_team_id];
+        sort($pair);
+        if ($pair !== $teams || ($game->match_date && Carbon::parse($game->match_date)->lt($this->since($tournament)))) {
+            return false;
+        }
+
+        $match->picks_event_id = $gameId;
+        $match->save();
+        $this->settleFromGame($gameId, $match->id);
+
+        return true;
     }
 
     private function logoUrl(?string $path): ?string

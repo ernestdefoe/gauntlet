@@ -169,7 +169,7 @@ export default class EditorPage extends Page {
       <fieldset>
         <legend>{t('editor.basics')}</legend>
         {this.input('title', 'text', { maxlength: 150, required: true })}
-        {this.input('game', 'text', { maxlength: 80, placeholder: extractText(t('editor.game_placeholder')) })}
+        {this.input('game', 'text', { maxlength: 80, placeholder: extractText(t('editor.game_placeholder')), disabled: this.started() })}
         <div className="Form-group">
           <label htmlFor="gauntlet-description">{t('editor.fields.description')}</label>
           <textarea

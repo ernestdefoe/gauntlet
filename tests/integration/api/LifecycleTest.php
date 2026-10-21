@@ -234,6 +234,7 @@ class LifecycleTest extends GauntletTestCase
 
         $this->assertSame(422, $this->json('POST', "/api/gauntlet/tournaments/{$t['id']}/entrants", 3, [])[0], 'a team needs a name');
         $this->assertSame(200, $this->json('POST', "/api/gauntlet/entrants/{$team['id']}/members", 3)[0]);
+        $this->assertSame(200, $this->json('POST', "/api/gauntlet/entrants/{$team['id']}/members/3", 2)[0]);
         $this->assertSame(422, $this->json('POST', "/api/gauntlet/entrants/{$team['id']}/members", 4)[0], 'full');
         $this->assertSame(422, $this->json('POST', "/api/gauntlet/tournaments/{$t['id']}/entrants", 3, ['name' => 'Again'])[0], 'already in a team');
 

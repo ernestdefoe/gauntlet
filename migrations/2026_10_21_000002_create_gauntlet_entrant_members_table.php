@@ -10,6 +10,8 @@ return Migration::createTable('gauntlet_entrant_members', function (Blueprint $t
     $table->unsignedInteger('user_id');
     $table->unsignedInteger('tournament_id');
     $table->dateTime('joined_at');
+    // A request to join an ad-hoc team waits for its captain.
+    $table->boolean('approved')->default(true);
 
     $table->primary(['entrant_id', 'user_id']);
     // One entry per member per tournament, enforced by the database.

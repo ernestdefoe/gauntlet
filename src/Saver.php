@@ -41,6 +41,23 @@ class Saver
 
         $has = fn (string $key) => array_key_exists($key, $data);
 
+        // The competition's shape: fixed once it has started.
+        // The game too: ratings are kept per game, and a result is taken back
+        // from the game it was rated in.
+        $shape = ['format', 'entryMode', 'entryType', 'teamSize', 'thirdPlace', 'grandFinalReset', 'predictions', 'swissRounds', 'allowDraws', 'game'];
+        if ($started && Arr::hasAny($data, $shape)) {
+            foreach ($shape as $key) {
+                if ($has($key) && $this->differs($tournament, $key, $data[$key])) {
+                    $this->fail($key, 'locked_after_start');
+                }
+            }
+        }
+
+        // Points per round can't change under picks already scored.
+        if ($started && $has('predictionPoints') && array_map('intval', array_values((array) $data['predictionPoints'])) !== array_map('intval', array_values((array) $tournament->prediction_points))) {
+            $this->fail('predictionPoints', 'locked_after_start');
+        }
+
         if ($has('title') || $new) {
             $title = trim(preg_replace('/\s+/u', ' ', (string) ($data['title'] ?? '')) ?? '');
             if ($title === '' || mb_strlen($title) > 150) {
@@ -64,16 +81,6 @@ class Saver
                 $this->fail('game', 'game');
             }
             $tournament->game = $game;
-        }
-
-        // The competition's shape: fixed once it has started.
-        $shape = ['format', 'entryMode', 'entryType', 'teamSize', 'thirdPlace', 'grandFinalReset', 'predictions', 'swissRounds', 'allowDraws'];
-        if ($started && Arr::hasAny($data, $shape)) {
-            foreach ($shape as $key) {
-                if ($has($key) && $this->differs($tournament, $key, $data[$key])) {
-                    $this->fail($key, 'locked_after_start');
-                }
-            }
         }
 
         if (! $started) {
@@ -207,6 +214,10 @@ class Saver
     {
         $column = Str::snake($key);
         $current = $tournament->{$column};
+
+        if ($key === 'game') {
+            return $current !== trim(preg_replace('/\s+/u', ' ', (string) $value) ?? '');
+        }
 
         return match (true) {
             is_bool($current) => $current !== (bool) $value,
