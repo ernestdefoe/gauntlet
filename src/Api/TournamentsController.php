@@ -22,7 +22,7 @@ use Psr\Http\Server\RequestHandlerInterface;
  * GET    /gauntlet/tournaments/{id}        one, whole
  * PATCH  /gauntlet/tournaments/{id}        edit
  * DELETE /gauntlet/tournaments/{id}        delete
- * POST   /gauntlet/tournaments/{id}/{action}  publish | start | reset | cancel
+ * POST   /gauntlet/tournaments/{id}/{action}  publish | start | reset | cancel.
  */
 class TournamentsController implements RequestHandlerInterface
 {

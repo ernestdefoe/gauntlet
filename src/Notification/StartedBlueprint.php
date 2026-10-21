@@ -2,7 +2,6 @@
 
 namespace ErnestDefoe\Gauntlet\Notification;
 
-
 /** The tournament you entered has started. */
 class StartedBlueprint extends TournamentBlueprint
 {

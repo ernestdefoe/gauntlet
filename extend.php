@@ -10,8 +10,8 @@
  * prediction scores, prizes — runs once that has committed (Listener\Announce).
  */
 
-use ErnestDefoe\Gauntlet\Access\ScopeTournamentVisibility;
 use ErnestDefoe\Gauntlet\Access\Gate;
+use ErnestDefoe\Gauntlet\Access\ScopeTournamentVisibility;
 use ErnestDefoe\Gauntlet\Api;
 use ErnestDefoe\Gauntlet\Console\RemindCommand;
 use ErnestDefoe\Gauntlet\Content\TournamentDocument;
@@ -71,7 +71,7 @@ return [
         ->get('/gauntlet/picks/teams', 'gauntlet.picks.teams', Api\PicksController::class)
         ->get('/gauntlet/picks/games', 'gauntlet.picks.games', Api\PicksController::class),
 
-    (new Extend\ApiResource(Api\TournamentResource::class)),
+    new Extend\ApiResource(Api\TournamentResource::class),
 
     (new Extend\ModelVisibility(Tournament::class))
         ->scope(ScopeTournamentVisibility::class),

@@ -11,7 +11,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 
 /**
  * PUT /gauntlet/tournaments/{id}/prediction    save the actor's bracket {picks: {key: entrantId}, tiebreaker}
- * GET /gauntlet/tournaments/{id}/predictions   the board, 50 a page
+ * GET /gauntlet/tournaments/{id}/predictions   the board, 50 a page.
  */
 class PredictionsController implements RequestHandlerInterface
 {

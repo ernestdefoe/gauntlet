@@ -21,7 +21,7 @@ use Psr\Http\Server\RequestHandlerInterface;
  * POST  /gauntlet/matches/{id}/report      a side reports {score1, score2}
  * POST  /gauntlet/matches/{id}/resolve     organiser: {score1, score2} and/or {winner: 1|2}
  * PATCH /gauntlet/matches/{id}             organiser: {scheduledAt, picksEventId}
- * POST  /gauntlet/matches/{id}/discussion  organiser: start its discussion now
+ * POST  /gauntlet/matches/{id}/discussion  organiser: start its discussion now.
  */
 class MatchesController implements RequestHandlerInterface
 {

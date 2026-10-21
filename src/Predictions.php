@@ -2,7 +2,6 @@
 
 namespace ErnestDefoe\Gauntlet;
 
-use Carbon\Carbon;
 use ErnestDefoe\Gauntlet\Access\Gate;
 use ErnestDefoe\Gauntlet\Engine\Builder;
 use Flarum\Foundation\ValidationException;

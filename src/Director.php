@@ -722,13 +722,13 @@ class Director
             $spec = Builder::blank(Builder::SWISS, $round, ++$position);
             $spec['entrant1'] = $a;
             $spec['entrant2'] = $b;
-            $specs[$position] = $spec;
+            $specs[Builder::key(Builder::SWISS, $round, $position)] = $spec;
         }
         if ($pairing['bye'] !== null) {
             $spec = Builder::blank(Builder::SWISS, $round, ++$position);
             $spec['entrant1'] = $pairing['bye'];
             $spec['dead2'] = true;
-            $specs[$position] = $spec;
+            $specs[Builder::key(Builder::SWISS, $round, $position)] = $spec;
         }
 
         $fixtures = Builder::fixtures($specs);

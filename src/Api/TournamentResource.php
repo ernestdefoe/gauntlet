@@ -37,5 +37,4 @@ class TournamentResource extends AbstractDatabaseResource
             Schema\Str::make('slug'),
         ];
     }
-
 }

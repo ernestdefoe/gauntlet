@@ -7,7 +7,7 @@ use Flarum\Database\AbstractModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * One match. ("Match" is a PHP keyword.)
+ * One match. ("Match" is a PHP keyword.).
  *
  * @property int $id
  * @property int $tournament_id
@@ -42,6 +42,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int|null $resolved_by_id
  * @property Carbon|null $scheduled_at
  * @property Carbon|null $completed_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  * @property-read Tournament $tournament
  */
 class Fixture extends AbstractModel

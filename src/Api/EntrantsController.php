@@ -20,7 +20,7 @@ use Psr\Http\Server\RequestHandlerInterface;
  * DELETE /gauntlet/entrants/{id}                  withdraw (?disqualify=1 for organisers)
  * POST   /gauntlet/entrants/{id}/checkin          check in (DELETE to undo)
  * POST   /gauntlet/entrants/{id}/members          join a team
- * DELETE /gauntlet/entrants/{id}/members/{user}   leave, or take someone off
+ * DELETE /gauntlet/entrants/{id}/members/{user}   leave, or take someone off.
  */
 class EntrantsController implements RequestHandlerInterface
 {

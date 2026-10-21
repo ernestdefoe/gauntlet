@@ -100,7 +100,7 @@ class PredictionTest extends GauntletTestCase
         $t = $this->tournament(['entryMode' => 'staff']);
         $this->assertSame(403, $this->json('POST', "/api/gauntlet/tournaments/{$t['id']}/entrants", 2, ['name' => 'Mine'])[0]);
         // A logo must be https and nothing else.
-        foreach (['javascript:alert(1)', 'http://example.com/a.png', 'https://user:pw@example.com/a.png', "https://example.com/a\".png"] as $bad) {
+        foreach (['javascript:alert(1)', 'http://example.com/a.png', 'https://user:pw@example.com/a.png', 'https://example.com/a".png'] as $bad) {
             $this->assertSame(422, $this->json('POST', "/api/gauntlet/tournaments/{$t['id']}/entrants", 1, ['name' => 'X', 'logoUrl' => $bad])[0], $bad);
         }
     }
