@@ -122,6 +122,38 @@ class Director
         });
     }
 
+    /**
+     * Fill an empty staff-entered field in one go, seeded in the order given.
+     *
+     * @param list<array{name: string, logo: string|null, picksTeamId: int|null}> $teams
+     */
+    public function fillField(Tournament $tournament, array $teams): void
+    {
+        $this->atomically($tournament, function (Tournament $tournament) use ($teams) {
+            if (! $tournament->isStaffEntered() || ! in_array($tournament->status, [Tournament::DRAFT, Tournament::REGISTRATION], true)) {
+                $this->fail('tournament', 'field_locked');
+            }
+            if (Entrant::query()->where('tournament_id', $tournament->id)->exists()) {
+                $this->fail('tournament', 'field_not_empty');
+            }
+
+            foreach (array_slice($teams, 0, $tournament->cap()) as $i => $team) {
+                $entrant = new Entrant();
+                $entrant->tournament_id = $tournament->id;
+                $entrant->name = $this->teamName($team['name']);
+                $entrant->logo_url = $team['picksTeamId'] ? null : $team['logo'];
+                $entrant->picks_team_id = $team['picksTeamId'];
+                $entrant->status = Entrant::REGISTERED;
+                $entrant->seed = $i + 1;
+                $entrant->save();
+            }
+
+            // The seeds are the board's: keep them unless the organiser changes them.
+            $tournament->seeding = 'manual';
+            $this->recount($tournament);
+        });
+    }
+
     public function joinTeam(Entrant $entrant, User $actor): void
     {
         if (! Gate::canJoin($actor)) {

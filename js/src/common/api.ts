@@ -145,6 +145,7 @@ export interface Tournament extends Summary {
     groups: { id: number; name: string }[];
     prediction: PredictionData | null;
     picksAvailable: boolean;
+    playoffBoard: { season: number; week: number; teams: string[] } | null;
   };
 }
 
@@ -192,7 +193,8 @@ export const api = {
   show: (id: number): Full => call('GET', `/tournaments/${id}`),
   save: (data: object, id?: number): Full => call(id ? 'PATCH' : 'POST', id ? `/tournaments/${id}` : '/tournaments', data),
   remove: (id: number) => call<void>('DELETE', `/tournaments/${id}`),
-  act: (id: number, action: 'publish' | 'start' | 'reset' | 'cancel' | 'discussion'): Full => call('POST', `/tournaments/${id}/${action}`),
+  act: (id: number, action: 'publish' | 'start' | 'reset' | 'cancel' | 'discussion' | 'playoff-board'): Full =>
+    call('POST', `/tournaments/${id}/${action}`),
   signUp: (id: number, data: object = {}): Full => call('POST', `/tournaments/${id}/entrants`, data),
   updateEntrant: (id: number, data: object): Full => call('PATCH', `/entrants/${id}`, data),
   withdraw: (id: number, disqualify = false): Full => call('DELETE', `/entrants/${id}`, undefined, disqualify ? { disqualify: 1 } : undefined),

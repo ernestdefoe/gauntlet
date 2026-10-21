@@ -5,6 +5,7 @@ namespace ErnestDefoe\Gauntlet\Api;
 use ErnestDefoe\Gauntlet\Access\Gate;
 use ErnestDefoe\Gauntlet\Director;
 use ErnestDefoe\Gauntlet\Discussions;
+use ErnestDefoe\Gauntlet\Integration\PlayoffBoard\PlayoffBoardBridge;
 use ErnestDefoe\Gauntlet\Presenter;
 use ErnestDefoe\Gauntlet\Saver;
 use ErnestDefoe\Gauntlet\Tournament;
@@ -22,7 +23,7 @@ use Psr\Http\Server\RequestHandlerInterface;
  * GET    /gauntlet/tournaments/{id}        one, whole
  * PATCH  /gauntlet/tournaments/{id}        edit
  * DELETE /gauntlet/tournaments/{id}        delete
- * POST   /gauntlet/tournaments/{id}/{action}  publish | start | reset | cancel.
+ * POST   /gauntlet/tournaments/{id}/{action}  publish | start | reset | cancel | discussion | playoff-board (fill a staff field from the Playoff Board).
  */
 class TournamentsController implements RequestHandlerInterface
 {
@@ -36,6 +37,7 @@ class TournamentsController implements RequestHandlerInterface
         private Director $director,
         private Discussions $discussions,
         private ConnectionInterface $db,
+        private PlayoffBoardBridge $playoffBoard,
     ) {
     }
 
@@ -91,6 +93,7 @@ class TournamentsController implements RequestHandlerInterface
             'reset' => $this->director->reset($tournament),
             'cancel' => $this->director->cancel($tournament),
             'discussion' => null,
+            'playoff-board' => $this->director->fillField($tournament, ($this->playoffBoard->field() ?? throw new \Illuminate\Database\Eloquent\ModelNotFoundException())['teams']),
             default => throw new \Illuminate\Database\Eloquent\ModelNotFoundException(),
         };
 

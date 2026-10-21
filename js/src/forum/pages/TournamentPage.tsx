@@ -752,6 +752,19 @@ export default class TournamentPage extends Page {
     return (
       <fieldset>
         <legend>{t('manage.add_heading')}</legend>
+        {tt.me.playoffBoard ? (
+          <div className="Gauntlet-notice">
+            <p>{t('manage.playoff_board', { week: tt.me.playoffBoard.week, teams: tt.me.playoffBoard.teams.join(', ') })}</p>
+            <Button
+              className="Button Button--primary"
+              icon="fas fa-football"
+              loading={this.busy}
+              onclick={() => this.run(api.act(tt.id, 'playoff-board'))}
+            >
+              {t('manage.playoff_board_fill')}
+            </Button>
+          </div>
+        ) : null}
         {tt.me.picksAvailable ? (
           <div className="Form-group Gauntlet-search">
             <label htmlFor="gauntlet-picks">{t('manage.picks_search')}</label>

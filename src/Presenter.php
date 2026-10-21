@@ -5,6 +5,7 @@ namespace ErnestDefoe\Gauntlet;
 use ErnestDefoe\Gauntlet\Access\Gate;
 use ErnestDefoe\Gauntlet\Engine\Standings;
 use ErnestDefoe\Gauntlet\Integration\Picks\PicksBridge;
+use ErnestDefoe\Gauntlet\Integration\PlayoffBoard\PlayoffBoardBridge;
 use Flarum\User\User;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Collection;
@@ -23,7 +24,16 @@ class Presenter
         private Teams $teams,
         private Predictions $predictions,
         private PicksBridge $picks,
+        private PlayoffBoardBridge $playoffBoard,
     ) {
+    }
+
+    /** @return array{season: int, week: int, teams: list<string>}|null */
+    private function playoffBoardSummary(): ?array
+    {
+        $field = $this->playoffBoard->field();
+
+        return $field ? ['season' => $field['season'], 'week' => $field['week'], 'teams' => array_column($field['teams'], 'name')] : null;
     }
 
     /** @return array<string, mixed> */
@@ -200,6 +210,9 @@ class Presenter
             'groups' => $tournament->isTeam() && $tournament->status === Tournament::REGISTRATION ? $this->teams->captainedGroups($actor) : [],
             'prediction' => null,
             'picksAvailable' => $manages && $tournament->isStaffEntered() && $this->picks->available(),
+            // Offered while a staff field is empty and the Playoff Board has a week stored.
+            'playoffBoard' => $manages && $tournament->isStaffEntered() && $entrants->isEmpty() && in_array($tournament->status, [Tournament::DRAFT, Tournament::REGISTRATION], true)
+                ? $this->playoffBoardSummary() : null,
         ];
 
         if ($tournament->predictions && ! $actor->isGuest()) {

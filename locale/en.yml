@@ -17,6 +17,7 @@ ernestdefoe-gauntlet:
     description: The description can be at most 5,000 characters.
     entrants_cannot_predict: Players in this tournament can't fill in a prediction bracket for it.
     field_locked: The field can't be changed once the tournament has started.
+    field_not_empty: The field already has teams in it.
     full: This tournament is full.
     game: The game can be at most 80 characters.
     group_already_entered: That group is already entered.
@@ -247,6 +248,8 @@ ernestdefoe-gauntlet:
       delete_confirm: Delete this tournament for good?
       add_heading: The field
       picks_search: Add a team from Picks
+      playoff_board: "The Playoff Board's week {week} projects this field, by playoff odds: {teams}. Fill the bracket with it, then check the seeds against the committee's before you start."
+      playoff_board_fill: Fill the field from the Playoff Board
       name: Name
       logo: Logo (https address)
       add: Add to the field

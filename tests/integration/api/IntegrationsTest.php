@@ -3,6 +3,7 @@
 namespace ErnestDefoe\Gauntlet\Tests\integration\api;
 
 use Carbon\Carbon;
+use ErnestDefoe\Gauntlet\Integration\PlayoffBoard\PlayoffBoardBridge;
 use ErnestDefoe\Gauntlet\Tests\integration\GauntletTestCase;
 use PHPUnit\Framework\Attributes\Test;
 use Resofire\Picks\PickEvent;
@@ -105,5 +106,52 @@ class IntegrationsTest extends GauntletTestCase
         $this->signUp($u['id'], 8, ['name' => 'Pick-up side']);
         $this->playOpen($this->start($u['id']));
         $this->assertSame(1, (int) $this->database()->table('gauntlet_ratings')->where('subject_id', 1)->where('subject_type', 'group')->value('played'));
+    }
+
+    #[Test]
+    public function the_playoff_board_fills_an_empty_staff_field_seeded_by_odds(): void
+    {
+        $this->extension('ernestdefoe-picks');
+        $now = Carbon::now();
+        $this->prepareDatabase(['picks_teams' => [
+            ['id' => 5, 'name' => 'Oregon', 'slug' => 'oregon', 'cfbd_id' => 2483, 'logo_custom' => 0, 'created_at' => $now, 'updated_at' => $now],
+            ['id' => 6, 'name' => 'Georgia', 'slug' => 'georgia', 'espn_id' => 61, 'logo_custom' => 0, 'created_at' => $now, 'updated_at' => $now],
+        ]]);
+        $t = $this->tournament(['entryMode' => 'staff', 'predictions' => true, 'seeding' => 'random'], false);
+        $this->assertNull($this->show($t['id'])['me']['playoffBoard'], 'no board installed');
+
+        // The board's latest week, as the Playoff Board stores it.
+        $this->app()->getContainer()->instance(PlayoffBoardBridge::class, new class($this->app()->getContainer()->make(\Flarum\Extension\ExtensionManager::class), $this->database()) extends PlayoffBoardBridge {
+            public function available(): bool
+            {
+                return true;
+            }
+
+            public function field(int $size = self::FIELD): ?array
+            {
+                return ['season' => 2026, 'week' => 9, 'teams' => [
+                    ['name' => 'Oregon', 'logo' => null, 'espnId' => 2483, 'playoff' => 91.0, 'picksTeamId' => 5],
+                    ['name' => 'Georgia', 'logo' => 'https://a.espncdn.com/i/teamlogos/ncaa/500/61.png', 'espnId' => 61, 'playoff' => 80.0, 'picksTeamId' => null],
+                    ['name' => 'Boise State', 'logo' => null, 'espnId' => 68, 'playoff' => 12.0, 'picksTeamId' => null],
+                ]];
+            }
+        });
+
+        $this->assertSame(['Oregon', 'Georgia', 'Boise State'], $this->show($t['id'])['me']['playoffBoard']['teams']);
+
+        // Matched to Picks by ESPN id, or by CollegeFootballData id (the same numbers).
+        $this->assertSame([2483 => 5, 61 => 6], $this->app()->getContainer()->make(PlayoffBoardBridge::class)->picksTeams([2483, 61, 68]));
+        $this->assertSame(404, $this->json('POST', "/api/gauntlet/tournaments/{$t['id']}/playoff-board", 2)[0], 'a draft is invisible to members');
+
+        [$status, $body, $raw] = $this->json('POST', "/api/gauntlet/tournaments/{$t['id']}/playoff-board", 1);
+        $this->assertSame(200, $status, $raw);
+        $field = $body['data']['entrants'];
+        $this->assertSame(['Oregon', 'Georgia', 'Boise State'], array_column($field, 'name'));
+        $this->assertSame([1, 2, 3], array_column($field, 'seed'));
+        $this->assertSame([5, null, null], array_column($field, 'picksTeamId'));
+        $this->assertStringContainsString('61.png', $field[1]['logoUrl']);
+        $this->assertSame('manual', $body['data']['seeding'], 'the board\'s order stands');
+        $this->assertNull($body['data']['me']['playoffBoard'], 'only offered for an empty field');
+        $this->assertSame(422, $this->json('POST', "/api/gauntlet/tournaments/{$t['id']}/playoff-board", 1)[0]);
     }
 }

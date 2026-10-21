@@ -57,7 +57,7 @@ return [
         ->post('/gauntlet/tournaments/{id:[0-9]+}/entrants', 'gauntlet.entrants.create', Api\EntrantsController::class)
         ->put('/gauntlet/tournaments/{id:[0-9]+}/prediction', 'gauntlet.predictions.save', Api\PredictionsController::class)
         ->get('/gauntlet/tournaments/{id:[0-9]+}/predictions', 'gauntlet.predictions.index', Api\PredictionsController::class)
-        ->post('/gauntlet/tournaments/{id:[0-9]+}/{action:publish|start|reset|cancel|discussion}', 'gauntlet.tournaments.action', Api\TournamentsController::class)
+        ->post('/gauntlet/tournaments/{id:[0-9]+}/{action:publish|start|reset|cancel|discussion|playoff-board}', 'gauntlet.tournaments.action', Api\TournamentsController::class)
         ->patch('/gauntlet/entrants/{id:[0-9]+}', 'gauntlet.entrants.update', Api\EntrantsController::class)
         ->delete('/gauntlet/entrants/{id:[0-9]+}', 'gauntlet.entrants.delete', Api\EntrantsController::class)
         ->post('/gauntlet/entrants/{id:[0-9]+}/checkin', 'gauntlet.entrants.checkin', Api\EntrantsController::class)
