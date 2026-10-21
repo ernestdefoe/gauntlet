@@ -5,8 +5,7 @@ import type TournamentModel from '../../common/TournamentModel';
 const ICONS: Record<string, string> = {
   gauntletMatchReady: 'fas fa-flag-checkered',
   gauntletResultReported: 'fas fa-clipboard-check',
-  gauntletDispute: 'fas fa-scale-balanced',
-  gauntletAwaiting: 'fas fa-gavel',
+  gauntletRuling: 'fas fa-scale-balanced',
   gauntletStarted: 'fas fa-play',
   gauntletCheckin: 'fas fa-user-check',
   gauntletPromoted: 'fas fa-arrow-up',

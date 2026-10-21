@@ -669,7 +669,10 @@ class MatchModal extends (flarum_common_components_FormModal__WEBPACK_IMPORTED_M
       }
     }, [1, 2].map(s => match.reports[s] ? m("li", null, (0,_common_api__WEBPACK_IMPORTED_MODULE_5__.t)('match.reported_by', {
       name: (0,_Bracket__WEBPACK_IMPORTED_MODULE_6__.entrantName)(this.entrant(s === 1 ? match.entrant1Id : match.entrant2Id)),
-      score: match.reports[s].join('–')
+      one: (0,_Bracket__WEBPACK_IMPORTED_MODULE_6__.entrantName)(one),
+      two: (0,_Bracket__WEBPACK_IMPORTED_MODULE_6__.entrantName)(two),
+      a: match.reports[s][0],
+      b: match.reports[s][1]
     })) : null)) : null, match.game ? m("p", {
       className: "helpText"
     }, (0,_common_api__WEBPACK_IMPORTED_MODULE_5__.t)('match.picks_game', {
@@ -1189,12 +1192,6 @@ class TournamentPage extends (flarum_common_components_Page__WEBPACK_IMPORTED_MO
         }, (0,_common_api__WEBPACK_IMPORTED_MODULE_9__.t)('tournament.leave_team')));
       }
     }
-    if (tt.status === 'running' && me && captain && me.status === 'registered' && tt.entryMode === 'members') {
-      items.push(m((flarum_common_components_Button__WEBPACK_IMPORTED_MODULE_4___default()), {
-        className: "Button Button--text",
-        onclick: () => confirm(flarum_common_utils_extractText__WEBPACK_IMPORTED_MODULE_8___default()((0,_common_api__WEBPACK_IMPORTED_MODULE_9__.t)('tournament.forfeit_confirm'))) && this.run(_common_api__WEBPACK_IMPORTED_MODULE_9__.api.withdraw(me.id))
-      }, (0,_common_api__WEBPACK_IMPORTED_MODULE_9__.t)('tournament.withdraw_running')));
-    }
     if (tt.status === 'running') {
       const yours = tt.matches.filter(x => ['open', 'reported', 'disputed'].includes(x.status) && me && (x.entrant1Id === me.id || x.entrant2Id === me.id));
       yours.forEach(x => items.push(m((flarum_common_components_Button__WEBPACK_IMPORTED_MODULE_4___default()), {
@@ -1212,6 +1209,12 @@ class TournamentPage extends (flarum_common_components_Page__WEBPACK_IMPORTED_MO
           count: waiting
         })));
       }
+    }
+    if (tt.status === 'running' && me && captain && me.status === 'registered' && tt.entryMode === 'members') {
+      items.push(m((flarum_common_components_Button__WEBPACK_IMPORTED_MODULE_4___default()), {
+        className: "Button Button--text",
+        onclick: () => confirm(flarum_common_utils_extractText__WEBPACK_IMPORTED_MODULE_8___default()((0,_common_api__WEBPACK_IMPORTED_MODULE_9__.t)('tournament.forfeit_confirm'))) && this.run(_common_api__WEBPACK_IMPORTED_MODULE_9__.api.withdraw(me.id))
+      }, (0,_common_api__WEBPACK_IMPORTED_MODULE_9__.t)('tournament.withdraw_running')));
     }
     if (tt.status === 'finished') {
       const champion = tt.entrants.find(e => e.finalRank === 1);

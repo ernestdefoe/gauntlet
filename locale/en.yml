@@ -54,10 +54,10 @@ ernestdefoe-gauntlet:
       subject: "Your match in {title} is ready"
       title: Your match is ready
       body: "Your next match in {title} is ready to play."
-    dispute:
-      subject: "A result in {title} is disputed"
-      title: A result is disputed
-      body: "The two sides reported different results for a match in {title}. Your decision settles it."
+    ruling:
+      subject: "A result in {title} needs your decision"
+      title: A result needs your decision
+      body: "A match in {title} is waiting for you: the two sides reported different results, or they agree and the result needs your confirmation."
     checkin:
       subject: "Check-in is open for {title}"
       title: Check-in is open
@@ -332,13 +332,11 @@ ernestdefoe-gauntlet:
       promoted: I'm moved off a tournament's waitlist
       started: A tournament I entered starts
       finished: A tournament I played in finishes
-      dispute: The sides disagree on a result in a tournament I run
-      awaiting: A result in a tournament I run needs confirming
+      ruling: A result in a tournament I run needs my decision
     notifications:
       gauntletMatchReady: "Your next match in {title} is ready"
       gauntletResultReported: "{opponent} reported a result in {title}: confirm it or report yours"
-      gauntletDispute: "A result in {title} is disputed"
-      gauntletAwaiting: "A result in {title} needs your confirmation"
+      gauntletRuling: "A result in {title} needs your decision"
       gauntletStarted: "{title} has started"
       gauntletCheckin: "Check-in is open for {title}"
       gauntletPromoted: "You're off the waitlist for {title}"

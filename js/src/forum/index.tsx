@@ -10,8 +10,7 @@ import TournamentNotification from './notifications/TournamentNotification';
 const TYPES = [
   'gauntletMatchReady',
   'gauntletResultReported',
-  'gauntletDispute',
-  'gauntletAwaiting',
+  'gauntletRuling',
   'gauntletStarted',
   'gauntletCheckin',
   'gauntletPromoted',
@@ -79,8 +78,7 @@ app.initializers.add('ernestdefoe-gauntlet', () => {
     items.add('gauntletFinished', { name: 'gauntletFinished', icon: 'fas fa-trophy', label: t('settings.finished') });
 
     if (app.forum.attribute('canCreateTournaments')) {
-      items.add('gauntletDispute', { name: 'gauntletDispute', icon: 'fas fa-scale-balanced', label: t('settings.dispute') });
-      items.add('gauntletAwaiting', { name: 'gauntletAwaiting', icon: 'fas fa-gavel', label: t('settings.awaiting') });
+      items.add('gauntletRuling', { name: 'gauntletRuling', icon: 'fas fa-scale-balanced', label: t('settings.ruling') });
     }
   });
 });

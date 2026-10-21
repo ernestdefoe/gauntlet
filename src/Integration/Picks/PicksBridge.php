@@ -195,7 +195,8 @@ class PicksBridge
         $winnerTeam = (int) ($game->result === 'home' ? $game->home_team_id : $game->away_team_id);
         $scores = [(int) $game->home_team_id => $game->home_score, (int) $game->away_team_id => $game->away_score];
 
-        $matches = Fixture::query()->where('picks_event_id', $gameId)->whereIn('status', Fixture::LIVE)->with('tournament')->get();
+        $matches = Fixture::query()->where('picks_event_id', $gameId)->whereIn('status', Fixture::LIVE)->with('tournament')->get()
+            ->merge($this->unlinkedBetween((int) $game->home_team_id, (int) $game->away_team_id, $gameId));
         foreach ($matches as $match) {
             $teams = Entrant::query()->whereIn('id', [$match->entrant1_id, $match->entrant2_id])->pluck('picks_team_id', 'id');
             $winner = array_search($winnerTeam, $teams->all(), false);
@@ -213,6 +214,36 @@ class PicksBridge
                 $this->log->warning("[gauntlet] match {$match->id} not settled from Picks game $gameId: ".$e->getMessage());
             }
         }
+    }
+
+    /**
+     * Live matches between these two teams that nothing linked yet — a
+     * later round opens before Picks has synced its game — linked now.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, Fixture>
+     */
+    private function unlinkedBetween(int $home, int $away, int $gameId): \Illuminate\Database\Eloquent\Collection
+    {
+        $ids = $this->db->table('gauntlet_matches as m')
+            ->join('gauntlet_tournaments as t', 't.id', '=', 'm.tournament_id')
+            ->join('gauntlet_entrants as a', 'a.id', '=', 'm.entrant1_id')
+            ->join('gauntlet_entrants as b', 'b.id', '=', 'm.entrant2_id')
+            ->whereNull('m.picks_event_id')
+            ->whereIn('m.status', Fixture::LIVE)
+            ->where('t.status', Tournament::RUNNING)
+            ->where('t.entry_mode', 'staff')
+            ->where(fn ($w) => $w->where(fn ($x) => $x->where('a.picks_team_id', $home)->where('b.picks_team_id', $away))
+                ->orWhere(fn ($x) => $x->where('a.picks_team_id', $away)->where('b.picks_team_id', $home)))
+            ->pluck('m.id')
+            ->all();
+
+        if (! $ids) {
+            return new \Illuminate\Database\Eloquent\Collection();
+        }
+
+        Fixture::query()->whereIn('id', $ids)->update(['picks_event_id' => $gameId]);
+
+        return Fixture::query()->whereIn('id', $ids)->with('tournament')->get();
     }
 
     private function logoUrl(?string $path): ?string

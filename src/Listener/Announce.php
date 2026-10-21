@@ -90,10 +90,7 @@ class Announce
 
         if ($event->disputed || $event->awaitingStaff) {
             $organiser = $tournament->user ? [$tournament->user] : [];
-            $blueprint = $event->disputed
-                ? new Notification\DisputeBlueprint($tournament, $data, $event->actor)
-                : new Notification\AwaitingBlueprint($tournament, $data, $event->actor);
-            $this->send($blueprint, array_filter($organiser, fn (User $u) => Gate::canManage($u, $tournament)), $tournament);
+            $this->send(new Notification\RulingBlueprint($tournament, $data, $event->actor), array_filter($organiser, fn (User $u) => Gate::canManage($u, $tournament)), $tournament);
 
             if (! $event->disputed) {
                 return;

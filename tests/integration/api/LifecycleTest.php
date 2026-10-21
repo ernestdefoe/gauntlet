@@ -122,7 +122,7 @@ class LifecycleTest extends GauntletTestCase
         [$status, $body] = $this->json('POST', "/api/gauntlet/matches/{$m['id']}/report", $two, ['score1' => 0, 'score2' => 3]);
         $this->assertSame(200, $status);
         $this->assertSame('disputed', $this->match($body['data'], 'W:1:1')['status']);
-        $this->assertSame(1, $this->database()->table('notifications')->where('type', 'gauntletDispute')->where('user_id', 1)->count());
+        $this->assertSame(1, $this->database()->table('notifications')->where('type', 'gauntletRuling')->where('user_id', 1)->count());
 
         // A player can't rule on it, nor report someone else's match.
         $this->assertSame(403, $this->json('POST', "/api/gauntlet/matches/{$m['id']}/resolve", $one, ['score1' => 3, 'score2' => 0])[0]);
@@ -167,7 +167,7 @@ class LifecycleTest extends GauntletTestCase
         $m = $this->match($t, 'W:1:1');
         $this->assertSame('awaiting', $m['status']);
         $this->assertSame('running', $t['status']);
-        $this->assertSame(1, $this->database()->table('notifications')->where('type', 'gauntletAwaiting')->count());
+        $this->assertSame(1, $this->database()->table('notifications')->where('type', 'gauntletRuling')->count());
 
         [$status, $body] = $this->json('POST', "/api/gauntlet/matches/{$m['id']}/resolve", 1, ['score1' => 2, 'score2' => 1]);
         $this->assertSame(200, $status);
