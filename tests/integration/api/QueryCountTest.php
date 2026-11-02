@@ -13,7 +13,7 @@ class QueryCountTest extends GauntletTestCase
         // A withdrawal from a round robin forfeits each of the leaver's
         // remaining matches: one write per match and one per opponent's win,
         // each a different row with its own values.
-        return [...parent::allowedRepeatedQueries(), 'update `flarum_gauntlet_matches` set `winner_id`', 'update "flarum_gauntlet_matches" set "winner_id"', 'set `wins` = ?', 'set "wins" = ?'];
+        return [...parent::allowedRepeatedQueries(), 'gauntlet_matches` set `winner_id`', 'gauntlet_matches" set "winner_id"', 'set `wins` = ?', 'set "wins" = ?'];
     }
 
     private function queriesFor(int $tournamentId, ?int $actor): int
