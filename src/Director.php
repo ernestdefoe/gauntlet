@@ -582,11 +582,21 @@ class Director
     }
 
     /** Complete a match and carry everything that follows from it. */
-    private function settle(Tournament $tournament, Fixture $match, ?int $winnerId, ?int $score1, ?int $score2, ?User $actor): void
+    /**
+     * A caller settling several matches in a row passes its own fixtures and
+     * entrants: they are read once, kept current here, and the caller saves
+     * the entrants when it is done.
+     *
+     * @param array<string, Fixture>|null $fixtures
+     * @param-out array<string, Fixture> $fixtures
+     * @param Collection<int, Entrant>|null $entrants
+     */
+    private function settle(Tournament $tournament, Fixture $match, ?int $winnerId, ?int $score1, ?int $score2, ?User $actor, ?array &$fixtures = null, ?Collection $entrants = null): void
     {
-        $fixtures = $this->fixtures($tournament);
+        $fixtures ??= $this->fixtures($tournament);
         $match = $fixtures[$match->key()];
-        $entrants = $this->entrants($tournament);
+        $callerSaves = $entrants !== null;
+        $entrants ??= $this->entrants($tournament);
         $advancer = new Advancer($fixtures);
 
         $this->record($tournament, $match, $winnerId, $score1, $score2, $actor, $entrants, $advancer);
@@ -609,10 +619,8 @@ class Director
         }
 
         $this->saveAll($advancer->dirty());
-        foreach ($entrants as $entrant) {
-            if ($entrant->isDirty()) {
-                $entrant->save();
-            }
+        if (! $callerSaves) {
+            $this->saveDirty($entrants);
         }
 
         $this->events[] = new Event\MatchCompleted($tournament, $match, $actor);
@@ -985,23 +993,35 @@ class Director
     /** Every match a retired entrant is still due to play is a forfeit. */
     private function forfeitLive(Tournament $tournament, User $actor): void
     {
+        // Read once: settle() keeps both current, so a round robin's worth of
+        // forfeits costs no more reads than one.
+        $fixtures = $this->fixtures($tournament);
         $entrants = $this->entrants($tournament);
 
-        for ($guard = 0; $guard < 4096; $guard++) {
+        for ($guard = 0; $guard < 4096 && $tournament->status === Tournament::RUNNING; $guard++) {
             $next = null;
-            foreach ($this->fixtures($tournament) as $fixture) {
+            foreach ($fixtures as $fixture) {
                 if (in_array($fixture->status, Fixture::LIVE, true) && ($side = $this->retiredSide($fixture, $entrants))) {
                     $next = [$fixture, $side];
                     break;
                 }
             }
             if (! $next) {
-                return;
+                break;
             }
             [$fixture, $side] = $next;
-            $this->settle($tournament, $fixture, (int) $fixture->{'entrant'.(3 - $side).'_id'}, null, null, $actor);
-            if ($tournament->status !== Tournament::RUNNING) {
-                return;
+            $this->settle($tournament, $fixture, (int) $fixture->{'entrant'.(3 - $side).'_id'}, null, null, $actor, $fixtures, $entrants);
+        }
+
+        $this->saveDirty($entrants);
+    }
+
+    /** @param Collection<int, Entrant> $entrants */
+    private function saveDirty(Collection $entrants): void
+    {
+        foreach ($entrants as $entrant) {
+            if ($entrant->isDirty()) {
+                $entrant->save();
             }
         }
     }
